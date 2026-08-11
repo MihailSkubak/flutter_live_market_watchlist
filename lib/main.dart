@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'core/di/injection.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await configureDependencies();
+  runApp(const PulseApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class PulseApp extends StatelessWidget {
+  const PulseApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return MaterialApp(
+      title: 'Pulse',
+      theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
+      home: const Scaffold(
+        body: Center(child: Text('Smt')),
       ),
     );
   }

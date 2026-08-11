@@ -10,10 +10,30 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State management
+  flutter_bloc: ^9.1.0
+  equatable: ^2.0.5
+
+  # DI
+  get_it: ^8.0.3
+  injectable: ^2.5.0
+
+  # Networking / SSE transport
+  dio: ^5.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+  # Codegen for DI
+  build_runner: ^2.4.13
+  injectable_generator: ^2.6.2
+
+  # Testing
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
+  fake_async: ^1.3.1
 
 flutter:
   uses-material-design: true
