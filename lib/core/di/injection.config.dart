@@ -9,8 +9,15 @@
 // coverage:ignore-file
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:dio/dio.dart' as _i361;
 import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
+
+import '../../feed/resilience/connection_manager.dart' as _i389;
+import '../../feed/resilience/tick_ordering_guard.dart' as _i562;
+import '../../feed/transport/dio_feed_api.dart' as _i23;
+import '../../feed/transport/feed_api.dart' as _i589;
+import 'network_module.dart' as _i567;
 
 // initializes the registration of main-scope dependencies inside of GetIt
 _i174.GetIt init(
@@ -18,6 +25,15 @@ _i174.GetIt init(
   String? environment,
   _i526.EnvironmentFilter? environmentFilter,
 }) {
-  _i526.GetItHelper(getIt, environment, environmentFilter);
+  final gh = _i526.GetItHelper(getIt, environment, environmentFilter);
+  final networkModule = _$NetworkModule();
+  gh.lazySingleton<_i361.Dio>(() => networkModule.dio());
+  gh.lazySingleton<_i562.TickOrderingGuard>(() => _i562.TickOrderingGuard());
+  gh.lazySingleton<_i589.FeedApi>(() => _i23.DioFeedApi(gh<_i361.Dio>()));
+  gh.lazySingleton<_i389.ConnectionManager>(
+    () => _i389.ConnectionManager(gh<_i589.FeedApi>()),
+  );
   return getIt;
 }
+
+class _$NetworkModule extends _i567.NetworkModule {}
