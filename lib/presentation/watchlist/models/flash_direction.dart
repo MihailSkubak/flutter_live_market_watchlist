@@ -1,0 +1,1 @@
+enum FlashDirection { none, up, down }

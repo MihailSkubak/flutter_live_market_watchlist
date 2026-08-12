@@ -11,7 +11,7 @@ part 'instruments_state.dart';
 /// Loads the static instrument list once at app startup. Uses its own
 /// login call rather than sharing ConnectionManager's token -- keeps this
 /// bloc independently testable and decoupled from live-stream timing.
-@lazySingleton
+@injectable
 class InstrumentsBloc extends Bloc<InstrumentsEvent, InstrumentsState> {
   final FeedApi _api;
 
