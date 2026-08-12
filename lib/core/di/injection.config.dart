@@ -17,6 +17,7 @@ import '../../feed/resilience/connection_manager.dart' as _i389;
 import '../../feed/resilience/tick_ordering_guard.dart' as _i562;
 import '../../feed/transport/dio_feed_api.dart' as _i23;
 import '../../feed/transport/feed_api.dart' as _i589;
+import '../../presentation/instruments/bloc/instruments_bloc.dart' as _i753;
 import 'network_module.dart' as _i567;
 
 // initializes the registration of main-scope dependencies inside of GetIt
@@ -32,6 +33,9 @@ _i174.GetIt init(
   gh.lazySingleton<_i589.FeedApi>(() => _i23.DioFeedApi(gh<_i361.Dio>()));
   gh.lazySingleton<_i389.ConnectionManager>(
     () => _i389.ConnectionManager(gh<_i589.FeedApi>()),
+  );
+  gh.lazySingleton<_i753.InstrumentsBloc>(
+    () => _i753.InstrumentsBloc(gh<_i589.FeedApi>()),
   );
   return getIt;
 }

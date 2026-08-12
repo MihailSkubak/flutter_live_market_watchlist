@@ -1,44 +1,16 @@
-import 'dart:async';
+//import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter_live_market_watchlist/test/helpers/fake_feed_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_live_market_watchlist/feed/errors/feed_exceptions.dart';
-import 'package:flutter_live_market_watchlist/feed/models/auth_token.dart';
+//import 'package:flutter_live_market_watchlist/feed/models/auth_token.dart';
 import 'package:flutter_live_market_watchlist/feed/models/connection_status.dart';
-import 'package:flutter_live_market_watchlist/feed/models/instrument.dart';
+//import 'package:flutter_live_market_watchlist/feed/models/instrument.dart';
 import 'package:flutter_live_market_watchlist/feed/resilience/connection_manager.dart';
-import 'package:flutter_live_market_watchlist/feed/transport/feed_api.dart';
+//import 'package:flutter_live_market_watchlist/feed/transport/feed_api.dart';
 import 'package:flutter_live_market_watchlist/feed/transport/sse_event.dart';
 import 'package:flutter_live_market_watchlist/feed/models/connection_snapshot.dart';
-
-class FakeFeedApi implements FeedApi {
-  int loginCalls = 0;
-  Object? nextLoginError;
-  final streamControllers = <StreamController<SseEvent>>[];
-  final lastEventIdsRequested = <int?>[];
-
-  @override
-  Future<AuthToken> login() async {
-    loginCalls++;
-    final err = nextLoginError;
-    if (err != null) {
-      nextLoginError = null;
-      throw err;
-    }
-    return const AuthToken(value: 'tok', expiresInSeconds: 60);
-  }
-
-  @override
-  Future<List<Instrument>> fetchInstruments(String token) async => const [];
-
-  @override
-  Stream<SseEvent> openStream({required String token, int? lastEventId}) {
-    lastEventIdsRequested.add(lastEventId);
-    final controller = StreamController<SseEvent>();
-    streamControllers.add(controller);
-    return controller.stream;
-  }
-}
 
 void main() {
   group('ConnectionManager', () {
