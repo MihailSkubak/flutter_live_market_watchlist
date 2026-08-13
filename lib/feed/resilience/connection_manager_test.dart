@@ -1,7 +1,9 @@
 //import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter_live_market_watchlist/test/helpers/fake_connectivity_monitor.dart';
 import 'package:flutter_live_market_watchlist/test/helpers/fake_feed_api.dart';
+import 'package:flutter_live_market_watchlist/test/helpers/fake_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_live_market_watchlist/feed/errors/feed_exceptions.dart';
 //import 'package:flutter_live_market_watchlist/feed/models/auth_token.dart';
@@ -17,7 +19,7 @@ void main() {
     test('goes connecting -> live on successful login+stream', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -34,7 +36,7 @@ void main() {
     test('stream error triggers reconnecting then live after backoff', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -58,7 +60,7 @@ void main() {
     test('backoff delay grows between consecutive failures', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
 
         manager.start();
         async.flushMicrotasks();
@@ -81,7 +83,7 @@ void main() {
     test('stop() cancels a pending reconnect and does not resume', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
 
         manager.start();
         async.flushMicrotasks();
@@ -102,7 +104,7 @@ void main() {
     test('reconnect passes Last-Event-ID from the most recent tick', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
 
         manager.start();
         async.flushMicrotasks();
@@ -126,7 +128,7 @@ void main() {
     test('login failure also schedules a reconnect', () {
       fakeAsync((async) {
         final api = FakeFeedApi()..nextLoginError = const FeedNetworkException('down');
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -147,7 +149,7 @@ void main() {
     test('silence longer than stall timeout marks stalled then reconnects', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -172,7 +174,7 @@ void main() {
     test('a tick within the stall window resets the timer and stays live', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -197,7 +199,7 @@ void main() {
     test('a heartbeat (no tick data) also resets the stall timer', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -220,7 +222,7 @@ void main() {
     test('token is proactively refreshed before it expires, no backoff bump', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionSnapshot>[];
         manager.statusStream.listen(statuses.add);
 
@@ -250,7 +252,7 @@ void main() {
     test('refresh reconnects using the last known event id', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
 
         manager.start();
         async.flushMicrotasks();
@@ -278,7 +280,7 @@ void main() {
     test('refresh failure falls back to backoff reconnect', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
         final statuses = <ConnectionStatus>[];
         manager.statusStream.listen((s) => statuses.add(s.status));
 
@@ -304,7 +306,7 @@ void main() {
     test('stop() before refresh fires cancels it, no extra login', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final manager = ConnectionManager(api);
+        final manager = ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage());
 
         manager.start();
         async.flushMicrotasks();
@@ -315,6 +317,103 @@ void main() {
         async.flushMicrotasks();
 
         expect(api.loginCalls, 1);
+
+        manager.dispose();
+      });
+    });
+
+    test('going offline suppresses the connection and reconnect attempts', () {
+      fakeAsync((async) {
+        final api = FakeFeedApi();
+        final connectivity = FakeConnectivityMonitor();
+        final manager = ConnectionManager(api, connectivity, FakeTokenStorage());
+        final statuses = <ConnectionStatus>[];
+        manager.statusStream.listen((s) => statuses.add(s.status));
+
+        connectivity.setOnline(true);
+        manager.start();
+        async.flushMicrotasks();
+        expect(statuses.last, ConnectionStatus.live);
+
+        connectivity.setOnline(false);
+        async.flushMicrotasks();
+        expect(statuses.last, ConnectionStatus.offline);
+
+        async.elapse(const Duration(seconds: 30));
+        async.flushMicrotasks();
+        expect(api.loginCalls, 1); // no reconnect attempts burned while offline
+
+        manager.dispose();
+        connectivity.dispose();
+      });
+    });
+
+    test('coming back online triggers immediate reconnect, not a backoff wait', () {
+      fakeAsync((async) {
+        final api = FakeFeedApi();
+        final connectivity = FakeConnectivityMonitor();
+        final manager = ConnectionManager(api, connectivity, FakeTokenStorage());
+        final statuses = <ConnectionStatus>[];
+        manager.statusStream.listen((s) => statuses.add(s.status));
+
+        connectivity.setOnline(true);
+        manager.start();
+        async.flushMicrotasks();
+
+        connectivity.setOnline(false);
+        async.flushMicrotasks();
+        expect(api.loginCalls, 1);
+
+        connectivity.setOnline(true);
+        async.flushMicrotasks(); // no elapse -- should reconnect right away
+        expect(api.loginCalls, 2);
+        expect(statuses.last, ConnectionStatus.live);
+
+        manager.dispose();
+        connectivity.dispose();
+      });
+    });
+
+    test('a stream failure while offline goes to offline, not reconnecting', () {
+      fakeAsync((async) {
+        final api = FakeFeedApi();
+        final connectivity = FakeConnectivityMonitor();
+        final manager = ConnectionManager(api, connectivity, FakeTokenStorage());
+        final statuses = <ConnectionStatus>[];
+        manager.statusStream.listen((s) => statuses.add(s.status));
+
+        connectivity.setOnline(true);
+        manager.start();
+        async.flushMicrotasks();
+
+        connectivity.setOnline(false);
+        async.flushMicrotasks();
+
+        manager.dispose();
+        connectivity.dispose();
+        expect(statuses.last, ConnectionStatus.offline);
+      });
+    });
+
+    test('saves token on successful login and deletes it on stop', () {
+      fakeAsync((async) {
+        final api = FakeFeedApi();
+        final tokenStorage = FakeTokenStorage();
+        final manager = ConnectionManager(
+          api,
+          FakeConnectivityMonitor()..setOnline(true),
+          tokenStorage,
+        );
+
+        manager.start();
+        async.flushMicrotasks();
+        expect(tokenStorage.saved, 'tok');
+        expect(tokenStorage.saveCalls, 1);
+
+        manager.stop();
+        async.flushMicrotasks();
+        expect(tokenStorage.deleteCalls, 1);
+        expect(tokenStorage.saved, isNull);
 
         manager.dispose();
       });

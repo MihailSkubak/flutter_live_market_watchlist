@@ -1,5 +1,7 @@
 import 'package:fake_async/fake_async.dart';
+import 'package:flutter_live_market_watchlist/test/helpers/fake_connectivity_monitor.dart';
 import 'package:flutter_live_market_watchlist/test/helpers/fake_feed_api.dart';
+import 'package:flutter_live_market_watchlist/test/helpers/fake_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_live_market_watchlist/feed/errors/feed_exceptions.dart';
 import 'package:flutter_live_market_watchlist/feed/models/connection_status.dart';
@@ -21,7 +23,7 @@ void main() {
     test('seeds items for each instrument with no data on start', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
 
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
@@ -37,7 +39,7 @@ void main() {
     test('a tick is applied only on the next 16ms flush, not immediately', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
 
@@ -63,7 +65,7 @@ void main() {
     test('flashes up when bid increases and down when bid decreases', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
 
@@ -96,7 +98,7 @@ void main() {
     test('coalesces a burst of same-symbol ticks into a single flush update', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
         
@@ -131,7 +133,7 @@ void main() {
     test('rejects a stale/duplicate tick via the ordering guard', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
 
@@ -158,7 +160,7 @@ void main() {
     test('reflects connection status changes from ConnectionManager', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
 
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
@@ -176,7 +178,7 @@ void main() {
     test('WatchlistStopped tears down subscriptions; later ticks have no effect', () {
       fakeAsync((async) {
         final api = FakeFeedApi();
-        final bloc = WatchlistBloc(ConnectionManager(api), TickOrderingGuard());
+        final bloc = WatchlistBloc(ConnectionManager(api, FakeConnectivityMonitor()..setOnline(true), FakeTokenStorage()), TickOrderingGuard());
         bloc.add(const WatchlistStarted(_instruments));
         async.flushMicrotasks();
 
