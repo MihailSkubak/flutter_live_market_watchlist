@@ -85,6 +85,7 @@ class DioFeedApi implements FeedApi {
           onDone: controller.close,
         );
       } on DioException catch (e) {
+        if (e.type == DioExceptionType.cancel) return;
         controller.addError(_mapError(e));
         await controller.close();
       }
@@ -92,9 +93,11 @@ class DioFeedApi implements FeedApi {
 
     controller = StreamController<SseEvent>(
       onListen: start,
-      onCancel: () {
+      onCancel: () async {
         cancelToken.cancel('stream cancelled');
-        sub?.cancel();
+        try {
+          await sub?.cancel();
+        } catch (_) {}
       },
     );
 

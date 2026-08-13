@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'core/di/injection.dart';
+import 'presentation/watchlist/watchlist_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await configureDependencies();
-  
   runApp(const PulseApp());
 }
 
@@ -16,9 +17,7 @@ class PulseApp extends StatelessWidget {
     return MaterialApp(
       title: 'Pulse',
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-      home: const Scaffold(
-        body: Center(child: Text('Smt')),
-      ),
+      home: const WatchlistScreen(),
     );
   }
 }

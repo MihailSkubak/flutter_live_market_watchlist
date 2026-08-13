@@ -48,9 +48,14 @@ class ConnectionManager {
   void stop() {
     _stopped = true;
     _cancelTimers();
-    _streamSub?.cancel();
-    _streamSub = null;
+    _cancelStreamSub();
     _emit(_snapshot.copyWith(status: ConnectionStatus.initial));
+  }
+
+  void _cancelStreamSub() {
+    final sub = _streamSub;
+    _streamSub = null;
+    sub?.cancel().catchError((_) {});
   }
 
   void dispose() {
@@ -114,8 +119,7 @@ class ConnectionManager {
   Future<void> _refreshToken() async {
     if (_stopped) return;
     _stallTimer?.cancel();
-    _streamSub?.cancel();
-    _streamSub = null;
+    _cancelStreamSub();
     try {
       final token = await _api.login();
       if (_stopped) return;
@@ -130,8 +134,7 @@ class ConnectionManager {
   void _scheduleReconnect() {
     if (_stopped) return;
     _cancelTimers();
-    _streamSub?.cancel();
-    _streamSub = null;
+    _cancelStreamSub();
     final delay = _backoff.nextDelay();
     _emit(_snapshot.copyWith(
       status: ConnectionStatus.reconnecting,
