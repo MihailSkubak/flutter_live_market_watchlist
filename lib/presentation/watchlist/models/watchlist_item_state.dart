@@ -8,7 +8,13 @@ import 'flash_direction.dart';
 /// so the widget can retrigger its flash animation even when the
 /// direction repeats (up, then up again) -- comparing [flash] alone
 /// wouldn't catch that.
+///
+/// [sessionHigh]/[sessionLow] and [recentBids] track history since this
+/// symbol's first tick in the current app session -- not persisted
+/// across restarts, matching the token's own session-scoped lifetime.
 class WatchlistItemState extends Equatable {
+  static const _sparklineCapacity = 50;
+
   final String symbol;
   final int decimals;
   final double bid;
@@ -16,6 +22,9 @@ class WatchlistItemState extends Equatable {
   final bool hasData;
   final FlashDirection flash;
   final int flashSeq;
+  final double? sessionHigh;
+  final double? sessionLow;
+  final List<double> recentBids;
 
   const WatchlistItemState({
     required this.symbol,
@@ -25,6 +34,9 @@ class WatchlistItemState extends Equatable {
     required this.hasData,
     required this.flash,
     required this.flashSeq,
+    required this.sessionHigh,
+    required this.sessionLow,
+    required this.recentBids,
   });
 
   factory WatchlistItemState.initial(Instrument instrument) => WatchlistItemState(
@@ -35,6 +47,9 @@ class WatchlistItemState extends Equatable {
         hasData: false,
         flash: FlashDirection.none,
         flashSeq: 0,
+        sessionHigh: null,
+        sessionLow: null,
+        recentBids: const [],
       );
 
   WatchlistItemState applyTick(PriceTick tick) {
@@ -46,6 +61,11 @@ class WatchlistItemState extends Equatable {
                 ? FlashDirection.down
                 : FlashDirection.none;
 
+    final updatedBids = [...recentBids, tick.bid];
+    if (updatedBids.length > _sparklineCapacity) {
+      updatedBids.removeAt(0);
+    }
+
     return WatchlistItemState(
       symbol: symbol,
       decimals: decimals,
@@ -54,9 +74,23 @@ class WatchlistItemState extends Equatable {
       hasData: true,
       flash: direction,
       flashSeq: direction == FlashDirection.none ? flashSeq : flashSeq + 1,
+      sessionHigh: sessionHigh == null ? tick.bid : (tick.bid > sessionHigh! ? tick.bid : sessionHigh),
+      sessionLow: sessionLow == null ? tick.bid : (tick.bid < sessionLow! ? tick.bid : sessionLow),
+      recentBids: updatedBids,
     );
   }
 
   @override
-  List<Object?> get props => [symbol, decimals, bid, ask, hasData, flash, flashSeq];
+  List<Object?> get props => [
+        symbol,
+        decimals,
+        bid,
+        ask,
+        hasData,
+        flash,
+        flashSeq,
+        sessionHigh,
+        sessionLow,
+        recentBids,
+      ];
 }
