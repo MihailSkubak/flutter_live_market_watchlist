@@ -224,24 +224,38 @@ repeating pattern.
 initial `WatchlistStarted`). `WatchlistRow` rebuilds are per-symbol via
 `context.select` and don't touch the list structure.
 
-**Instrument detail screen, before vs. after the 100ms sampling
-throttle,** captured during an active burst with the detail screen open:
-
-| | Build avg | Build median | Jank rate |
-|---|---|---|---|
-| Before throttling | 16.8ms | 18.3ms | 56% |
-| After throttling (steady, no burst) | 4.56ms | 3.69ms | 3% |
-
-The detail screen originally rebuilt on every 16ms `WatchlistBloc` flush
-(inherited from the same reactive `context.select` pattern as the main
-list), which is unnecessary for a single value display. Decoupling it to
-its own 100ms sampling timer removed the burst-time regression without
-affecting the main list's behavior.
+**Instrument detail screen: throttling decision, re-verified after a
+later fix.** `InstrumentDetailScreen` samples bloc state on its own 100ms
+timer instead of reactively rebuilding on every 16ms `WatchlistBloc`
+flush like the main list — unnecessary responsiveness for a single-value
+display. This was originally justified by a burst-time measurement (56%
+jank / 16.8ms avg build before throttling, vs 3% / 4.56ms after).
 
 A separate, earlier animation bug was also caught this way: using
 `TweenAnimationBuilder` with a `ValueKey(flashSeq)` forced Flutter to
-tear down and recreate the entire `AnimationController`/`Element` subtree
-on every price flash, instead of just restarting an animation. Replacing
-it with a persistent `AnimationController` restarted via
-`.forward(from: 0)` was the fix — found and confirmed via DevTools frame
-data, not by inspection alone.
+tear down and recreate the entire `AnimationController`/`Element`
+subtree on every price flash, instead of just restarting an animation.
+Replacing it with a persistent `AnimationController` restarted via
+`.forward(from: 0)`, and later correctly using `AnimatedBuilder`'s
+`child` parameter to stop rebuilding the row's static content on every
+animation frame, fixed it — found and confirmed via DevTools frame data.
+
+That `child` fix changed the cost profile the original throttling
+decision was based on, which was flagged in code review — rightly so: a
+decision made from measurements should be revisited when the code behind
+those measurements changes. Re-measured on a matched, fair A/B (same hot
+symbol XAUUSD, same ~1-minute session, profile mode, no deliberate burst
+— just the symbol's normal high tick rate):
+
+| | Build avg | Median | Jank rate |
+|---|---|---|---|
+| Reactive (`context.select`) | 15.24ms | 13.69ms | 18% |
+| Throttled (`Timer.periodic(100ms)`) | 10.97ms | 10.61ms | 8% |
+
+The `child` fix meaningfully narrowed the gap (no longer the 56%-vs-3%
+gulf from the original measurement) but didn't close it — throttling
+still roughly halves the jank rate. The likely remaining cost is the
+detail screen's own full rebuild plus `SparklinePainter` repaint (up to
+50 points) on every state emission for a constantly-ticking hot symbol —
+a cost independent of the background list's animation overhead that the
+`child` fix addressed. Kept the 100ms sampling approach on this basis backed by numbers.
