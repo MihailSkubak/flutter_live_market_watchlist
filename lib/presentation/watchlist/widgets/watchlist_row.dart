@@ -78,31 +78,32 @@ class _WatchlistRowState extends State<WatchlistRow>
         ),
       ),
       child: AnimatedBuilder(
-        animation: _flashColorAnimation,
+  animation: _flashColorAnimation,
+  child: AnimatedOpacity(
+          opacity: isLive ? 1.0 : 0.4,
+          duration: const Duration(milliseconds: 300),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 80,
+                child: Text(
+                  item.symbol,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+              ),
+              const Spacer(),
+              _PriceColumn(label: 'Bid', value: item.bid, decimals: item.decimals, hasData: item.hasData),
+              const SizedBox(width: 24),
+              _PriceColumn(label: 'Ask', value: item.ask, decimals: item.decimals, hasData: item.hasData),
+            ],
+          ),
+        ),
         builder: (context, child) {
           return Container(
             color: _flashColorAnimation.value,
             height: 64,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AnimatedOpacity(
-              opacity: isLive ? 1.0 : 0.4,
-              duration: const Duration(milliseconds: 300),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 80,
-                    child: Text(
-                      item.symbol,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
-                    ),
-                  ),
-                  const Spacer(),
-                  _PriceColumn(label: 'Bid', value: item.bid, decimals: item.decimals, hasData: item.hasData),
-                  const SizedBox(width: 24),
-                  _PriceColumn(label: 'Ask', value: item.ask, decimals: item.decimals, hasData: item.hasData),
-                ],
-              ),
-            ),
+            child: child,
           );
         },
       ),
