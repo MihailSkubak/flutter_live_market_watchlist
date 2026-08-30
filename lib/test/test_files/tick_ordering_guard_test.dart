@@ -19,7 +19,7 @@ void main() {
       expect(guard.accept(_tick(symbol: 'EURUSD', ts: 1001)), isTrue);
     });
 
-    test('rejects an exact duplicate (same ts) -- server duplicate() case', () {
+    test('rejects an exact duplicate (same ts, same id) -- server duplicate() case', () {
       final guard = TickOrderingGuard();
       guard.accept(_tick(symbol: 'EURUSD', ts: 1000, id: 5));
       final duplicate = _tick(symbol: 'EURUSD', ts: 1000, id: 5);
@@ -33,6 +33,20 @@ void main() {
       expect(guard.accept(stale), isFalse);
     });
 
+    test('accepts a same-ts tick with a higher id -- millisecond-resolution burst case', () {
+      final guard = TickOrderingGuard();
+      guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 1));
+      expect(guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 2)), isTrue);
+      expect(guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 3)), isTrue);
+    });
+
+    test('same ts, lower or equal id is still rejected', () {
+      final guard = TickOrderingGuard();
+      guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 5));
+      expect(guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 5)), isFalse); // the same id
+      expect(guard.accept(_tick(symbol: 'BTCUSD', ts: 1000, id: 3)), isFalse); // id less
+    });
+
     test('tracks each symbol independently', () {
       final guard = TickOrderingGuard();
       guard.accept(_tick(symbol: 'EURUSD', ts: 5000));
@@ -44,15 +58,6 @@ void main() {
       guard.accept(_tick(symbol: 'EURUSD', ts: 5000));
       guard.reset();
       expect(guard.accept(_tick(symbol: 'EURUSD', ts: 100)), isTrue);
-    });
-
-    test('a burst of ticks for the same symbol keeps only strictly increasing ones', () {
-      final guard = TickOrderingGuard();
-      final results = [1000, 1000, 1001, 999, 1002, 1002, 1003]
-          .map((ts) => guard.accept(_tick(symbol: 'EURUSD', ts: ts)))
-          .toList();
-
-      expect(results, [true, false, true, false, true, false, true]);
     });
   });
 }

@@ -169,17 +169,7 @@ dart run build_runner build
 
 **4. Tests:**
 
-What's covered, by layer:
-- `test/feed/transport/` — SSE line parser: tick/gap/heartbeat/malformed
-  parsing, including the server's raw garbage-injection case.
-- `test/feed/resilience/` — `ConnectionManager` (login/stream/backoff
-  cycle, stall watchdog, proactive token refresh, offline suppression,
-  token storage save/delete) and `TickOrderingGuard` (dedup + out-of-order
-  rejection), all driven by `fake_async` — no real server, no real time.
-- `test/presentation/` — `InstrumentsBloc`, `WatchlistBloc` (tick
-  coalescing into a single flush, flash direction, ordering-guard
-  integration, connection-status propagation) and `WatchlistItemState`
-  (session high/low tracking, sparkline buffer capping).
+All automated test files are isolated under the test/test_files/ directory, providing a dedicated location for the project's test suite and keeping test-related code separate from the application source.
 
 `ConnectionManager` and the Blocs are tested against fakes
 (`FakeFeedApi`, `FakeConnectivityMonitor`, `FakeTokenStorage` in

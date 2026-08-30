@@ -11,14 +11,18 @@ import '../models/price_tick.dart';
 /// and out-of-order replays (older ts, rejected the same way).
 @lazySingleton
 class TickOrderingGuard {
-  final _lastAppliedTs = <String, int>{};
+  final _lastApplied = <String, (int ts, int id)>{};
 
   bool accept(PriceTick tick) {
-    final last = _lastAppliedTs[tick.symbol];
-    if (last != null && tick.ts <= last) return false;
-    _lastAppliedTs[tick.symbol] = tick.ts;
+    final last = _lastApplied[tick.symbol];
+    if (last != null) {
+      final (lastTs, lastId) = last;
+      final isNewer = tick.ts > lastTs || (tick.ts == lastTs && tick.id > lastId);
+      if (!isNewer) return false;
+    }
+    _lastApplied[tick.symbol] = (tick.ts, tick.id);
     return true;
   }
 
-  void reset() => _lastAppliedTs.clear();
+  void reset() => _lastApplied.clear();
 }
