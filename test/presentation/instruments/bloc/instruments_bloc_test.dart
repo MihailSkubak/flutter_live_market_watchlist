@@ -1,5 +1,5 @@
 import 'package:bloc_test/bloc_test.dart';
-import 'package:flutter_live_market_watchlist/test/helpers/fake_feed_api.dart';
+import '../../../helpers/fake_feed_api.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_live_market_watchlist/feed/errors/feed_exceptions.dart';
 import 'package:flutter_live_market_watchlist/feed/models/instrument.dart';

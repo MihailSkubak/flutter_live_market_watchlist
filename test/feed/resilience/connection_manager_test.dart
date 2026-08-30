@@ -1,9 +1,9 @@
 //import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
-import 'package:flutter_live_market_watchlist/test/helpers/fake_connectivity_monitor.dart';
-import 'package:flutter_live_market_watchlist/test/helpers/fake_feed_api.dart';
-import 'package:flutter_live_market_watchlist/test/helpers/fake_token_storage.dart';
+import '../../helpers/fake_connectivity_monitor.dart';
+import '../../helpers/fake_feed_api.dart';
+import '../../helpers/fake_token_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_live_market_watchlist/feed/errors/feed_exceptions.dart';
 //import 'package:flutter_live_market_watchlist/feed/models/auth_token.dart';

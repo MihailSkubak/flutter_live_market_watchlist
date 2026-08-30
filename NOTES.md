@@ -169,12 +169,35 @@ dart run build_runner build
 
 **4. Tests:**
 
-All automated test files are isolated under the test/test_files/ directory, providing a dedicated location for the project's test suite and keeping test-related code separate from the application source.
+Test suite lives in `test/`, at the project root next to `lib/`, mirroring
+its structure (`test/feed/transport/`, `test/feed/resilience/`,
+`test/presentation/`, `test/helpers/`) — the standard Flutter convention,
+so `flutter test` finds and runs all 51 tests with no extra arguments.
+`flutter_test`, `bloc_test`, and `fake_async` are dev-only dependencies
+(`flutter_bloc` itself stays a regular dependency, since it's used
+directly in production code by `InstrumentsBloc`/`WatchlistBloc`).
+
+What's covered, by layer:
+- `test/feed/transport/` — SSE line parser: tick/gap/heartbeat/malformed
+  parsing, including the server's raw garbage-injection case.
+- `test/feed/resilience/` — `ConnectionManager` (login/stream/backoff
+  cycle, stall watchdog, proactive token refresh, offline suppression,
+  token storage save/delete) and `TickOrderingGuard` (dedup + out-of-order
+  rejection, including a same-millisecond burst case using `id` as a
+  tie-breaker — see the trade-offs section above).
+- `test/presentation/` — `InstrumentsBloc`, `WatchlistBloc` (tick
+  coalescing into a single flush, flash direction, ordering-guard
+  integration, connection-status propagation) and `WatchlistItemState`
+  (session high/low tracking, sparkline buffer capping).
 
 `ConnectionManager` and the Blocs are tested against fakes
 (`FakeFeedApi`, `FakeConnectivityMonitor`, `FakeTokenStorage` in
 `test/helpers/`) that implement the same interfaces as production —
 nothing here talks to a real socket or waits on real `Duration`s.
+Connection-lifecycle logic (reconnect/backoff, stall detection,
+proactive refresh, offline handling) is driven entirely by `fake_async`,
+so it's fully testable without a real server and without real time —
+directly satisfying that requirement from the task.
 
 ---
 
